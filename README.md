@@ -4,6 +4,9 @@ Many thanks to [@mps-ddp](https://github.com/mps-ddp) for creating [mccl](https:
 
 > only `DPP` has been tested, `FSDP` benchmarks are on the way.
 
+![bench](bench.png)
+![bench_bars](bench_bars.png)
+
 ## Setup
 
 ```bash

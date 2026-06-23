@@ -210,11 +210,13 @@ def _plot(runs: list[RunStats], baselines: list[RunStats], output: str) -> None:
     axes[0].set_title("Per-step wall time")
     axes[0].legend(loc="upper right", fontsize=7, ncol=2)
     axes[0].grid(True, alpha=0.3)
+    axes[0].set_xlim(0, 100)
 
     axes[1].set_xlabel("Wall time (s, cumulative from timed train steps)")
     axes[1].set_ylabel("Loss")
     axes[1].legend(loc="upper right", fontsize=7, ncol=2)
     axes[1].grid(True, alpha=0.3)
+    axes[1].set_xlim(0, 500)
 
     nparams = runs[0].total_params
     gbatch = runs[0].global_batch
@@ -326,11 +328,7 @@ def main() -> None:
 
     baselines = _pick_baseline(runs)
     _print_table(runs, baselines)
-
-    out_npz = Path(f"{args.output}.npz")
-    _save_npz(runs, out_npz)
-    print(f"\nwrote {out_npz.resolve()}")
-
+    print("\n")
     _plot(runs, baselines, args.output)
 
 
