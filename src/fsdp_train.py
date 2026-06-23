@@ -4,6 +4,9 @@ FSDP training benchmark on a synthetic task. Optimized for macOS / MPS using MCC
 This script demonstrates FSDP (Fully Sharded Data Parallel) combined with MCCL
 for high-performance multi-GPU or multi-Mac collective communications on Apple Silicon.
 
+FSDP CPU Offloading is explicitly enabled to bypass macOS MPS "UntypedStorage.resize_"
+backend bugs.
+
 examples:
     # 2-rank FSDP on one Mac with MCCL
     torchrun --nproc_per_node=2 --nnodes=1 --master_addr=127.0.0.1 --master_port=29500 \
@@ -31,9 +34,12 @@ import torch
 import torch.distributed as dist
 import torch.nn as nn
 from torch.distributed.fsdp import FullyShardedDataParallel as FSDP
-from torch.distributed.fsdp import MixedPrecision, ShardingStrategy
+from torch.distributed.fsdp import (
+    CPUOffload,
+    MixedPrecision,
+    ShardingStrategy,
+)
 
-# Import from ddp_utils
 from utils import (
     SyntheticDataset,
     build_model,
@@ -90,7 +96,10 @@ def run_fsdp(args) -> None:
 
     torch.manual_seed(42)
     dims = get_model_dims(args)
-    model = build_model(*dims).to(device)
+    
+    # CHANGED: Keep parameters initially on CPU (or construct there), FSDP will copy
+    # active components to device during computing loops automatically.
+    model = build_model(*dims)
     torch.manual_seed(42 + rank)
 
     # Compute total parameters BEFORE wrapping with FSDP
@@ -107,11 +116,13 @@ def run_fsdp(args) -> None:
 
     # Wrap model with FSDP
     # Sharding Strategy: FULL_SHARD shards parameters + gradients + optimizer states across ranks
+    # CHANGED: Added cpu_offload=CPUOffload(offload_params=True) to bypass macOS UntypedStorage resizing limits
     fsdp_model = FSDP(
         model,
         sharding_strategy=ShardingStrategy.FULL_SHARD,
         mixed_precision=mp_policy,
         device_id=device,
+        cpu_offload=CPUOffload(offload_params=True),
     )
 
     optimizer = torch.optim.AdamW(fsdp_model.parameters(), lr=1e-4, weight_decay=0.01)
