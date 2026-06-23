@@ -89,11 +89,22 @@ def _load_runs(paths: list[Path]) -> list[RunStats]:
     for path in sorted(paths):
         data = _load(path)
         _validate(data, path)
+        
+        # Get the base descriptive label from ddp_utils
+        base_label = run_label_from_payload(data)
+        
+        # Safe extraction of the world_size integer from the JSON payload
+        ws = data.get("world_size", 1)
+        
+        # Append worldsize cleanly depending on count
+        rank_suffix = f" ({ws} rank)" if ws == 1 else f" ({ws} ranks)"
+        final_label = f"{base_label}{rank_suffix}"
+        
         runs.append(
             RunStats(
                 path=path,
                 name=path.stem,
-                label=run_label_from_payload(data),
+                label=final_label,  # Injects the new string configuration
                 data=data,
             )
         )

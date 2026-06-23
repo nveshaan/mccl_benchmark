@@ -258,7 +258,7 @@ def run_ddp(args) -> None:
             except Exception:
                 pass
         out = write_training_stats(
-            args.save_stats, f"ddp_{args.backend}", step_times, losses,
+            args.save_stats, f"ddp_{args.backend}_ws{world_size}", step_times, losses,
             args.batch_size, world_size, total_params,
             config=cfg, mccl_metrics=mccl_metrics,
         )
