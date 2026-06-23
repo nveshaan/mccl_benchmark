@@ -34,7 +34,7 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
-from ddp_utils import run_label_from_payload
+from utils import run_label_from_payload
 
 _REQUIRED_KEYS = (
     "step_times",

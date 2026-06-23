@@ -19,6 +19,7 @@ mkdir -p bench_runs
 
 ## Run
 
+**DDP**
 ```bash
 # Single-GPU baseline (no torchrun needed)
 python src/ddp_train.py --baseline --save-stats bench_runs/
@@ -40,6 +41,24 @@ torchrun --nproc_per_node=1 --nnodes=2 --node_rank=0 \
 torchrun --nproc_per_node=1 --nnodes=2 --node_rank=0 \
     --master_addr=169.254.x.x --master_port=29500 \
     src/ddp_train.py --backend gloo --steps 100 --batch-size 128 --save-stats bench_runs/
+```
+
+**FSDP**
+```bash
+# 2-rank FSDP on one Mac with MCCL
+torchrun --nproc_per_node=2 --nnodes=1 --master_addr=127.0.0.1 --master_port=29500 \
+    src/fsdp_train.py --save-stats bench_runs/
+
+# 2-node FSDP setup over a physical Thunderbolt bridge
+# Run on Mac 0 (Master Node):
+torchrun --nproc_per_node=1 --nnodes=2 --node_rank=0 \
+    --master_addr=169.254.x.x --master_port=29500 \
+    src/fsdp_train.py --save-stats bench_runs/
+
+# Run on Mac 1 (Worker Node):
+torchrun --nproc_per_node=1 --nnodes=2 --node_rank=1 \
+    --master_addr=169.254.x.x --master_port=29500 \
+    src/fsdp_train.py
 ```
 
 Then plot,

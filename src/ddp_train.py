@@ -37,7 +37,7 @@ import torch.distributed as dist
 import torch.nn as nn
 from torch.nn.parallel import DistributedDataParallel as DDP
 
-from ddp_utils import (
+from utils import (
     SyntheticDataset,
     build_model,
     run_config_from_args,
