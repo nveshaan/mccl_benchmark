@@ -1,0 +1,12 @@
+[project]
+name = "mccl-benchmark"
+version = "0.1.0"
+description = "benchmarking mccl on apple silicon"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "matplotlib>=3.11.0",
+    "mccl>=0.3.4",
+    "numpy>=2.5.0",
+    "torch>=2.12.1",
+]
