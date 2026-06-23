@@ -28,12 +28,12 @@ torchrun --nproc_per_node=2 --nnodes=1 --master_addr=127.0.0.1 --master_port=295
 torchrun --nproc_per_node=2 --nnodes=1 --master_addr=127.0.0.1 --master_port=29500 \
     src/ddp_train.py --backend gloo --save-stats bench_runs/
 
-# 2-node MCCL over Thunderbolt
+# 2-node MCCL over Thunderbolt (node_rank=1 on the second device)
 torchrun --nproc_per_node=1 --nnodes=2 --node_rank=0 \
     --master_addr=169.254.x.x --master_port=29500 \
     src/ddp_train.py --steps 100 --batch-size 128 --save-stats bench_runs/
 
-# 2-node Gloo for comparison (CPU tensors)
+# 2-node Gloo for comparison (CPU tensors) (node_rank=1 on the second device)
 torchrun --nproc_per_node=1 --nnodes=2 --node_rank=0 \
     --master_addr=169.254.x.x --master_port=29500 \
     src/ddp_train.py --backend gloo --steps 100 --batch-size 128 --save-stats bench_runs/
