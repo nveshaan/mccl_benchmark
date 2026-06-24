@@ -36,9 +36,12 @@ import torch
 import torch.distributed as dist
 import torch.nn as nn
 from torch.nn.parallel import DistributedDataParallel as DDP
+from torch.utils.data.distributed import DistributedSampler
+from torch.utils.data import DataLoader
 
 from utils import (
     SyntheticDataset,
+    SyntheticMapDataset,
     build_model,
     run_config_from_args,
     write_training_stats,
@@ -72,6 +75,8 @@ def parse_args() -> argparse.Namespace:
                         "or directory (auto-named from run settings)")
     p.add_argument("--warmup", type=int, default=5,
                    help="Warmup steps before timing (default: 5)")
+    p.add_argument("--use-distributed-sampler", action="store_true",
+                   help="Whether to use PyTorch's DistributedSampler")
     return p.parse_args()
 
 
@@ -179,7 +184,12 @@ def run_ddp(args) -> None:
     optimizer = torch.optim.AdamW(ddp_model.parameters(), lr=1e-4, weight_decay=0.01)
     loss_fn = nn.CrossEntropyLoss()
 
-    dataset = SyntheticDataset(dims[0], dims[1])
+    if args.use_distributed_sampler:
+        dataset = SyntheticMapDataset(dims[0], dims[1])
+        dataloader = DataLoader(dataset, batch_size=args.batch_size, shuffle=False, sampler=DistributedSampler(dataset))
+        data_iter = iter(dataloader)
+    else:
+        dataset = SyntheticDataset(dims[0], dims[1])
     total_params = sum(p.numel() for p in model.parameters())
 
     if rank == 0:
@@ -193,7 +203,12 @@ def run_ddp(args) -> None:
     losses: list[float] = []
 
     for step in range(args.warmup + args.steps):
-        x, y = dataset.get_batch(args.batch_size, device, step, rank, world_size)
+        if args.use_distributed_sampler:
+            x, y = next(data_iter)
+            x = x.to(device=device)
+            y = y.to(device=device)
+        else:
+            x, y = dataset.get_batch(args.batch_size, device, step, rank, world_size)
         t0 = time.perf_counter()
         optimizer.zero_grad(set_to_none=True)
 

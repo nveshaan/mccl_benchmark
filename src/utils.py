@@ -8,6 +8,7 @@ from pathlib import Path
 
 import torch
 import torch.nn as nn
+from torch.utils.data import Dataset
 
 
 # ── Synthetic dataset ────────────────────────────────────────────────
@@ -38,6 +39,37 @@ class SyntheticDataset:
         x = centroids[y] + noise
         y = y.to(device=device)
         return x, y
+
+
+class SyntheticMapDataset(Dataset):
+    """A fixed-size Map-style PyTorch Dataset for well-separated Gaussian clusters."""
+    
+    def __init__(self, input_dim: int, num_classes: int, size: int = 10000,
+                 seed: int = 424242, separation: float = 5.0) -> None:
+        super().__init__()
+        self.size = size
+        self.input_dim = input_dim
+        self.num_classes = num_classes
+        
+        # Initialize fixed centroids
+        g = torch.Generator()
+        g.manual_seed(seed)
+        self.centroids = torch.randn(num_classes, input_dim, generator=g) * separation
+
+    def __len__(self) -> int:
+        return self.size
+
+    def __getitem__(self, idx: int) -> tuple[torch.Tensor, torch.Tensor]:
+        # Seed deterministically based on the sample index
+        # This ensures data is consistent but different across indices
+        torch.manual_seed(2000 + idx)
+        
+        y = torch.randint(0, self.num_classes, (1,)).item()
+        noise = torch.randn(self.input_dim) * 0.3
+        x = self.centroids[y] + noise
+        
+        # Returns single instances; DataLoader will handle batching automatically
+        return x, torch.tensor(y)
 
 
 # ── Model components ─────────────────────────────────────────────────
